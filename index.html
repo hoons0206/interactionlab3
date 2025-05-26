@@ -17,7 +17,7 @@
     }
     #clearBtn {
       position: fixed;
-      top: 20px;
+      bottom: 20px;
       right: 20px;
       padding: 10px 16px;
       font-size: 16px;
@@ -28,9 +28,9 @@
       cursor: pointer;
       z-index: 999;
     }
-    @media (max-width: 768px) {
+    @media (min-width: 769px) {
       #clearBtn {
-        display: none;
+        display: none; /* 노트북 이상에서는 안 보이게 */
       }
     }
   </style>
@@ -43,8 +43,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-    // 🔧 여기에 본인의 Firebase 설정 정보 입력
-   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    // 🔧 여기에 자신의 Firebase 설정 입력
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyD4d7JvLj90ar0Q8o_AEXFTjhMZF-oI-DU",
   authDomain: "interaction-lab-3-c4513.firebaseapp.com",
@@ -55,15 +55,20 @@ const firebaseConfig = {
   appId: "1:40397314576:web:b6bbbeb99fd43bda508895",
   measurementId: "G-XKWS92QVP7"
 };
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const drawRef = ref(db, "drawings");
 
     const canvas = document.getElementById("drawCanvas");
     const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+
+    // 🖥️ 실제 픽셀 크기 설정 (화면에 맞게)
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
 
     const isMobile = window.innerWidth <= 768;
     let isDrawing = false;
@@ -74,6 +79,7 @@ const firebaseConfig = {
     }
 
     if (isMobile) {
+      // 📱 모바일: 그리기 좌표 전송만
       canvas.addEventListener("touchstart", e => {
         const touch = e.touches[0];
         lastX = touch.clientX;
@@ -107,6 +113,7 @@ const firebaseConfig = {
     }
 
     if (!isMobile) {
+      // 🖥️ 노트북: 실시간으로 선 그리기
       onChildAdded(drawRef, (data) => {
         const { fromX, fromY, toX, toY, color } = data.val();
         ctx.strokeStyle = color;
@@ -118,11 +125,12 @@ const firebaseConfig = {
       });
     }
 
-    // 🧹 지우기 버튼
+    // ✅ 모바일 전용 지우기 버튼
     document.getElementById("clearBtn").addEventListener("click", () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      remove(drawRef);
+      remove(drawRef); // Firebase 데이터 삭제
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // 로컬 캔버스도 초기화
     });
+
   </script>
 </body>
 </html>
